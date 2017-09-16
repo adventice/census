@@ -5,12 +5,16 @@ from subprocess import call
 
 BOUNDARIES = {
   'aggregate_dissemination_areas': 'lada000b16a_e.zip',
-  'forward_sortation_areas': 'lfsa000b16a_e.zip'
+  'forward_sortation_areas': 'lfsa000b16a_e.zip',
+  'tracts': 'lct_000b16a_e.zip',
+  'dissemination_areas': 'lda_000b16a_e.zip'
 }
 
 OBSERVATIONS = {
   'forward_sortation_areas': '026',
-  'aggregate_dissemination_areas': '030'
+  'aggregate_dissemination_areas': '030',
+  'tracts': '023',
+  'dissemination_areas': '024',
 }
 
 data = os.path.join('data', '2016')
