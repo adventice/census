@@ -4,16 +4,11 @@ from lxml import etree
 from subprocess import call
 
 BOUNDARIES = {
-  'aggregate_dissemination_areas': 'lada000b16a_e.zip',
   'forward_sortation_areas': 'lfsa000b16a_e.zip',
-  'tracts': 'lct_000b16a_e.zip',
   'dissemination_areas': 'lda_000b16a_e.zip'
 }
 
 OBSERVATIONS = {
-  'forward_sortation_areas': '026',
-  'aggregate_dissemination_areas': '030',
-  'tracts': '023',
   'dissemination_areas': '024',
 }
 
@@ -29,7 +24,7 @@ def download():
     url = os.path.join(geo_url, filename)
     call(['wget', '--directory-prefix', archives, '--no-clobber', url])
 
-  observations_url = 'http://www12.statcan.gc.ca/census-recensement/2016/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&TYPE=XML&GEONO={geo_no}'
+  observations_url = 'http://www12.statcan.gc.ca/census-recensement/2016/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&TYPE=TAB&GEONO={geo_no}'
   for name, geo_no in OBSERVATIONS.items():
     url = observations_url.format(geo_no=geo_no)
     filename = os.path.join(archives, '%s.zip' % name)
@@ -44,70 +39,21 @@ def unzip():
   for name in OBSERVATIONS.keys():
     zipfile = os.path.join(archives, '%s.zip' % name )
     dest = os.path.join(data, name)
-    call(['7za', 'x', zipfile, '-y', '-o%s' % dest])
+    call(['unzip', '-n', zipfile, '-d', dest])
 
-def iter_observation(filename):
-  dom = etree.iterparse(filename, events=('start', 'end'))
-  z = 0
-  for action, elem in dom:
-    tag = elem.tag.split('}')[1]
-    if action == 'start' and tag == 'Series':
-      if elem.find('./{*}Obs/{*}ObsValue') is None:  
-        continue
-      dough = {
-        'geo_id': elem.find('./{*}SeriesKey/{*}Value[@concept="GEO"]').get('value'),
-        'dim0': elem.find('./{*}SeriesKey/{*}Value[@concept="DIM0"]').get('value'),
-        'dim1': elem.find('./{*}SeriesKey/{*}Value[@concept="DIM1"]').get('value'),
-        'value': elem.find('./{*}Obs/{*}ObsValue').get('value'),
-      }
-      yield dough
-    elem.clear()
-
-def to_csv(filename):
-  print ('\t'.join(['geo_id', 'dim0', 'dim1', 'value']))
-  for dough in iter_observation(filename):
-      print ('\t'.join(dough.values()))
-
-def dump_descriptions(filename):
-  dom = etree.iterparse(filename, events=('start', 'end'))
-  for action, elem in dom:
-    if '}' not in elem.tag:
-      continue
-    tag = elem.tag.split('}')[1]       
-    if action == 'start' and tag == 'Code':
-      if elem.find('./{*}Description') is None:
-        continue
-      if len(elem.findall('.//{*}Description')) != 2:
-        continue
-      desc_en, desc_fr = elem.findall('.//{*}Description')
-      print (elem.get('value'), '\t',desc_en.text,'\t', desc_fr.text)
-    elem.clear()
-
-def to_grouped(filename):
-  geos = {}
-  p = 0 
-  fields = ['geo_id']
+def prepare(filename):
   first = True
-  for line in open(filename).readlines():
+  for row in open(filename):
     if first:
       first = False
       continue
-    geo_id, dim0, dim1, value = line[:-1].split('\t')
-    key = 'dim_%s_%s' % (dim0, dim1)
-    if key not in fields: 
-      fields.append(key)
-    geo = geos.get(geo_id, dict(geo_id=geo_id))
-    geo[key] = value
-    geos[geo_id] = geo
-
-  header = None
-  for geo_id, obs in geos.items():
-      if not header:
-        print ('\t'.join(fields))
-        header = True
-      
-      row = [obs[k] if k in obs else '' for k in fields]
-      print ('\t'.join(row))
+    row = row.strip('\r\n')
+    # see "Census Observations Fields" in README.md
+    indexes = [2,1,9,11,12,13]
+    fields = row.split('\t')
+    fields = [fields[i] if fields[i] not in ['x', '..', '...','F'] else 'null' for i in indexes]
+    result = [field.strip('"') for field in fields]
+    print ('\t'.join(result))
 
 if __name__=='__main__':
   argv.pop(0)
@@ -118,11 +64,10 @@ if __name__=='__main__':
     download()
   elif cmd == 'unzip':
     unzip()
-  elif cmd == 'csv':
-    to_csv(**config)
-  elif cmd == 'grouped':
-    to_grouped(**config)
+  elif cmd == 'prepare':
+    prepare(**config)
   elif cmd == 'descriptions':
     dump_descriptions(**config)
   else:
     raise Exception('command not found')
+
