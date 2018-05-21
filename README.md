@@ -20,14 +20,16 @@
 ```bash
     $ python cli.py prepare \
       filename=data/2016/dissemination_areas/98-401-X2016024_English_TAB_data.csv \
-      > data/2016/dissemination_areas/census_observations.csv   
+      > data/2016/dissemination_areas/census_observations.csv
 ```
 
 Dissemination areas took around 5mins to prepare on a 2.5Ghz CPU.
 
 ## Load into postgres
 
-```
+```sh
+    $ psql -c "CREATE DATABASE geo;"
+
     $ psql geo < sql/create_table.sql
 
     $ psql geo -c "\copy census_observations \
@@ -45,23 +47,34 @@ Dissemination areas took around 5mins to prepare on a 2.5Ghz CPU.
     data/2016/dissemination_areas/lda_000b16a_e.shp
 ```
 
+### Optional: Build a headings table
+Do you want the headings and sub-headings of each census observation as a result of a query? Carry out the following to build such a join table:
+
+```sh
+    $ psql geo < sql/create_headings_table.sql
+
+    $ psql geo -c "\copy dim_headings \
+    FROM data/2016/archives/dim_titles.tsv \
+    CSV DELIMITER E'\t' NULL as 'null'"
+```
+
 # Example
 
 ## Top individual income by DA
 
 ```sql
-SELECT o.geo_id, o.value_total, g.prname FROM census_observations o, census_lda g 
-  WHERE g.dauid = o.geo_id 
-  AND dim=727 
-  AND value_total is not null 
-  ORDER BY value_total 
+SELECT o.geo_id, o.value_total, g.prname FROM census_observations o, census_lda g
+  WHERE g.dauid = o.geo_id
+  AND dim=727
+  AND value_total is not null
+  ORDER BY value_total
   DESC LIMIT 10;
  ```
 
 Result:
 
 ```
-    geo_id  | value_total | prname  
+    geo_id  | value_total | prname
   ----------+-------------+---------
    35202898 |      598016 | Ontario
    48060591 |      519168 | Alberta
@@ -72,7 +85,7 @@ Result:
    35202897 |      431104 | Ontario
    35202351 |      423936 | Ontario
    35240203 |      422912 | Ontario
-   35202349 |      410624 | Ontario  
+   35202349 |      410624 | Ontario
 ```
 
 ## Get individual income by lat lon
@@ -86,7 +99,7 @@ SELECT o.value_total FROM census_observations o, census_lda g
 Result:
 
 ```
- value_total 
+ value_total
 -------------
       598016
 ```
@@ -122,7 +135,7 @@ http://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/bound-limit-e
      7     "ALT_GEO_CODE"
      8     "DIM: Profile of Dissemination Areas (832)"
      9     "Member ID: Profile of Dissemination Areas (832)"
-     10    "Notes: Profile of Dissemination Areas (832)" 
+     10    "Notes: Profile of Dissemination Areas (832)"
      11    "Dim: Sex (3): Member ID: [1]: Total - Sex"
      12    "Dim: Sex (3): Member ID: [2]: Male"
      13    "Dim: Sex (3): Member ID: [3]: Female"

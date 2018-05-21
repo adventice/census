@@ -9,7 +9,11 @@ BOUNDARIES = {
 }
 
 OBSERVATIONS = {
-  'dissemination_areas': '024',
+  'dissemination_areas': '024'
+}
+
+DIMENSIONS = {
+  'dictionary': 'dim_titles.tsv'
 }
 
 data = os.path.join('data', '2016')
@@ -22,6 +26,11 @@ def download():
   geo_url = 'http://www12.statcan.gc.ca/census-recensement/2011/geo/bound-limit/files-fichiers/2016/'
   for filename in BOUNDARIES.values():
     url = os.path.join(geo_url, filename)
+    call(['wget', '--directory-prefix', archives, '--no-clobber', url])
+
+  tsv_url = 'https://gist.githubusercontent.com/brianbancroft/670cfa5618f1739f65c42f91b6b775be/raw/459909e45a4f849b8690875e93094f947eac1772/'
+  for filename in DIMENSIONS.values():
+    url = os.path.join(tsv_url, filename)
     call(['wget', '--directory-prefix', archives, '--no-clobber', url])
 
   observations_url = 'http://www12.statcan.gc.ca/census-recensement/2016/dp-pd/prof/details/download-telecharger/comp/GetFile.cfm?Lang=E&TYPE=TAB&GEONO={geo_no}'
