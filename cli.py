@@ -8,8 +8,9 @@ BOUNDARIES = {
   'dissemination_areas': 'lda_000b16a_e.zip'
 }
 
+
 OBSERVATIONS = {
-  'dissemination_areas': '024'
+  'dissemination_areas': '044'
 }
 
 DIMENSIONS = {
@@ -58,7 +59,7 @@ def prepare(filename):
       continue
     row = row.strip('\r\n')
     # see "Census Observations Fields" in README.md
-    indexes = [2,1,9,11,12,13]
+    indexes = [2,1,10,12,13,14]
     fields = row.split('\t')
     fields = [fields[i] if fields[i] not in ['x', '..', '...','F'] else 'null' for i in indexes]
     result = [field.strip('"') for field in fields]

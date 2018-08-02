@@ -9,6 +9,7 @@
 ## Setup env
 
     $ virtualenv -p python3 env
+    $ pip install -r requirements.txt
 
 ## Download & unzip boundaries and observations
 
@@ -102,6 +103,27 @@ Result:
  value_total
 -------------
       598016
+```
+
+
+## Interpolate with custom polygon
+
+If you want to get the observations for other boundaries than the one provided by Census Canada (Province, Forward Station Area, Municipality, ...), you have to interpolate your polygon with the DA (dissemination area). Here is an example:
+
+ - `vendor` contain the electoral districts for the Province of Quebec. 
+ - I use `sum` because it's an absolute value (population count), if it's an average I guess you should use `avg`
+
+```sql
+SELECT vendor.wkb_geometry,
+sum(obs.value_total * st_area(st_intersection(vendor.wkb_geometry, census.wkb_geometry))/st_area(census.wkb_geometry))::numeric::integer as total,
+sum(obs.value_male * st_area(st_intersection(vendor.wkb_geometry, census.wkb_geometry))/st_area(census.wkb_geometry))::numeric::integer as male,
+sum(obs.value_female * st_area(st_intersection(vendor.wkb_geometry, census.wkb_geometry))/st_area(census.wkb_geometry))::numeric::integer as female
+FROM electoral_district vendor
+JOIN census_lda census ON st_intersects(vendor.wkb_geometry, census.wkb_geometry)
+JOIN census_observations obs ON census.dauid = obs.geo_id
+WHERE ST_IsValid(census.wkb_geometry) 
+AND obs.dim = 8
+GROUP BY 1,2,3,4,5;
 ```
 
 # URLs
