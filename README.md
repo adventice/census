@@ -125,6 +125,28 @@ WHERE ST_IsValid(census.wkb_geometry)
 AND obs.dim = 8
 GROUP BY 1,2,3,4,5;
 ```
+## Flatten observations
+
+```sql
+  CREATE TABLE census_observations_flat as 
+    SELECT level, geo_id, 
+      array_agg(value_total ORDER BY dim) as value_total, 
+      array_agg(value_male ORDER BY dim) as value_male, 
+      array_agg(value_female ORDER BY dim) as value_female 
+    FROM census_observations group by level, geo_id;
+```
+
+You can now query multiple observations at the same time:
+
+```sql
+  SELECT 
+    obs.value_total[1698] as pop_count, 
+    obs.value_total[1699] as l1_no,
+    obs.value_total[1700] as l2_sec,
+    obs.value_total[1701] as l3_post
+  FROM census_observations obs
+  WHERE geo_id = '01';
+```
 
 # URLs
 
