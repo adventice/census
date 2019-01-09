@@ -20,7 +20,7 @@
 
 ```bash
     $ python cli.py prepare \
-      filename=data/2016/dissemination_areas/98-401-X2016024_English_TAB_data.csv \
+      filename=data/2016/dissemination_areas/98-401-X2016044_English_TAB_data.csv \
       > data/2016/dissemination_areas/census_observations.csv
 ```
 

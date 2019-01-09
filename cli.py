@@ -10,7 +10,8 @@ BOUNDARIES = {
 
 
 OBSERVATIONS = {
-  'dissemination_areas': '044'
+  'dissemination_areas': '044',
+  'forward_sortation_areas': '046'
 }
 
 DIMENSIONS = {
@@ -51,16 +52,27 @@ def unzip():
     dest = os.path.join(data, name)
     call(['unzip', '-n', zipfile, '-d', dest])
 
+def header_to_indexes(header):
+  header = list(map(lambda i: i.strip('"'), header))
+  fieldnames = [
+    'GEO_LEVEL',
+    'GEO_CODE (POR)',
+    next(filter(lambda f: f.startswith('Member ID: Profile of'), header)),
+    'Dim: Sex (3): Member ID: [1]: Total - Sex',
+    'Dim: Sex (3): Member ID: [2]: Male',
+    'Dim: Sex (3): Member ID: [3]: Female'
+  ]
+  return [header.index(fieldname) for fieldname in fieldnames]
+
 def prepare(filename):
   first = True
   for row in open(filename):
+    row = row.strip('\r\n')
+    fields = row.split('\t')
     if first:
       first = False
+      indexes = header_to_indexes(fields)
       continue
-    row = row.strip('\r\n')
-    # see "Census Observations Fields" in README.md
-    indexes = [2,1,10,12,13,14]
-    fields = row.split('\t')
     fields = [fields[i] if fields[i] not in ['x', '..', '...','F'] else 'null' for i in indexes]
     result = [field.strip('"') for field in fields]
     print ('\t'.join(result))
